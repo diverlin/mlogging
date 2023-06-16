@@ -47,10 +47,8 @@ void Logging::doWork(const std::string& category)
     std::string filename = "log" + category + ".txt";
     std::ofstream file(filename, std::ios::app);
 
-    //std::cout << "doWork thread" << std::this_thread::get_id() << std::endl;
+    std::unique_lock<std::mutex> lock(m_mutex);
     while (true) {
-            std::unique_lock<std::mutex> lock(m_mutex);
-        //        std::cout << "---inside loop doWork thread" << std::this_thread::get_id() << std::endl;
         m_conditionVariable.wait(lock, [this, category]() {
             return m_wakeUpFlags[category] || m_isStopThreadsRequested;
         });
@@ -58,11 +56,6 @@ void Logging::doWork(const std::string& category)
         if (m_isStopThreadsRequested) {
             break;
         }
-
-        // Thread-specific work
-//        for (const std::string& msg: m_queues[category]) {
-//            std::cout << "thread id=" << std::this_thread::get_id() << "msg=" << msg << " category=" << category << " is awake!" << std::endl;
-//        }
 
         // Process the next log message in the queue
         std::queue<std::string>& queuePerCategory = m_logQueue[category];
@@ -79,9 +72,8 @@ void Logging::doWork(const std::string& category)
 
         // Reset the flag
         m_wakeUpFlags[category] = false;
-
-        lock.unlock();
     }
+    lock.unlock();
 
     file.close();
 }
