@@ -39,21 +39,36 @@ void Logging::log(const std::string& msg, const std::string& category)
     }
 }
 
+std::string Logging::fileName(const CurrentDateTimeUTC& dt, const std::string& category)
+{
+    std::string result(dt.dateStr());
+    result += "_" + category;
+    return result;
+}
+
 void Logging::threadWork(const std::string& category)
 {
-    std::string filename = "log" + category + ".txt";
-    std::ofstream file(filename, std::ios::app);
+    CurrentDateTimeUTC startDt;
+    std::string startFileName = Logging::fileName(startDt, category);
+    std::ofstream file(startFileName, std::ios::app);
 
     std::unique_lock<std::mutex> lock(m_mutex);
+    m_category2FileNameMap[category] = startFileName;
     while (true) {
-        CurrentDateTimeUTC dt;
-
         m_conditionVariable.wait(lock, [this, category]() {
             return !m_category2LogQueueMap[category].empty() || m_isStopThreadsRequested;
         });
 
         if (m_isStopThreadsRequested) {
             break;
+        }
+
+        CurrentDateTimeUTC dt;
+        std::string currentFileName = Logging::fileName(dt, category);
+        if (currentFileName != m_category2FileNameMap[category]) {
+            file.close();
+            file.open(currentFileName, std::ios::app);
+            m_category2FileNameMap[category] = currentFileName;
         }
 
         // process all log messages in the queue belonging to current category
