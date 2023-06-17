@@ -30,7 +30,7 @@ void Logging::log(const std::string& msg, const std::string& category)
     const bool isThreadForCategoryExists = m_category2LogQueueMap.find(category) != m_category2LogQueueMap.end();
     m_category2LogQueueMap[category].push(msg);
     if (!isThreadForCategoryExists) {
-        m_threads.emplace_back([this, category]() { doWork(category); });
+        m_threads.emplace_back([this, category]() { threadWork(category); });
         MLOGGER_DEBUG("create new thread num=", m_threads.size());
     } else {
         // if thread exists, we wake up all sleeping threads, where the only thread which has messages queue will continue it's work
@@ -38,7 +38,7 @@ void Logging::log(const std::string& msg, const std::string& category)
     }
 }
 
-void Logging::doWork(const std::string& category)
+void Logging::threadWork(const std::string& category)
 {
     std::string filename = "log" + category + ".txt";
     std::ofstream file(filename, std::ios::app);

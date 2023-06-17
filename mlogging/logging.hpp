@@ -47,7 +47,7 @@ private:
     std::condition_variable m_conditionVariable;
     bool m_isStopThreadsRequested = false;
 
-    void doWork(const std::string& category);
+    void threadWork(const std::string& category);
 };
 
 } // namespace custom
