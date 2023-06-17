@@ -68,7 +68,7 @@ void Logging::threadWork(const std::string& locationPattern)
 
         CurrentDateTimeUTC dt;
         std::string currentFilePath = Logging::filePath(dt, locationPattern);
-        if (currentFilePath != m_locationPattern2FilePathMap[locationPattern]) {
+        if (currentFilePath != m_locationPattern2FilePathMap[locationPattern]) { // the currentFilePath take into account current date(day num) which will trigger new file creation
             reopenFilePath(file, currentFilePath);
             m_locationPattern2FilePathMap[locationPattern] = currentFilePath;
         }
