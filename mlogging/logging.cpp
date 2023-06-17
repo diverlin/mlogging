@@ -26,16 +26,14 @@ Logging::~Logging()
     }
 }
 
-void Logging::log(const std::string& msg, const std::string& relPath)
+void Logging::log(const std::string& msg, const std::string& locationPattern)
 {
-    std::string category(relPath);
-
     std::lock_guard<std::mutex> lock(m_mutex);
-    MLOGGER_DEBUG("add log queue", msg, category);
-    const bool isThreadForCategoryExists = m_category2LogQueueMap.find(category) != m_category2LogQueueMap.end();
-    m_category2LogQueueMap[category].push(msg);
-    if (!isThreadForCategoryExists) {
-        m_threads.emplace_back([this, category]() { threadWork(category); });
+    MLOGGER_DEBUG("add log queue", msg, locationPattern);
+    const bool isThreadForLocationPatternExists = m_locationPattern2LogQueueMap.find(locationPattern) != m_locationPattern2LogQueueMap.end();
+    m_locationPattern2LogQueueMap[locationPattern].push(msg);
+    if (!isThreadForLocationPatternExists) {
+        m_threads.emplace_back([this, locationPattern]() { threadWork(locationPattern); });
         MLOGGER_DEBUG("create new thread num=", m_threads.size());
     } else {
         // if thread exists, we wake up all sleeping threads, where the only thread which has messages queue will continue it's work
@@ -43,26 +41,24 @@ void Logging::log(const std::string& msg, const std::string& relPath)
     }
 }
 
-std::string Logging::fileName(const CurrentDateTimeUTC& dt, const std::string& category)
+std::string Logging::filePath(const CurrentDateTimeUTC& dt, const std::string& locationPattern)
 {
-    std::string result(dt.dateStr());
-    std::string loc = fsutils::basePath(category);
-    std::string baseName = fsutils::baseName(category);
-    result += "_" + baseName;
-    return result;
+    std::string basePath = fsutils::basePath(locationPattern);
+    std::string baseName = fsutils::baseName(locationPattern);
+    return basePath + dt.dateStr() + "_" + baseName;
 }
 
-void Logging::threadWork(const std::string& category)
+void Logging::threadWork(const std::string& locationPattern)
 {
     CurrentDateTimeUTC startDt;
-    std::string startFileName = Logging::fileName(startDt, category);
-    std::ofstream file(startFileName, std::ios::app);
+    std::string startFilePath = Logging::filePath(startDt, locationPattern);
+    std::ofstream file(startFilePath, std::ios::app);
 
     std::unique_lock<std::mutex> lock(m_mutex);
-    m_category2FileNameMap[category] = startFileName;
+    m_locationPattern2FilePathMap[locationPattern] = startFilePath;
     while (true) {
-        m_conditionVariable.wait(lock, [this, category]() {
-            return !m_category2LogQueueMap[category].empty() || m_isStopThreadsRequested;
+        m_conditionVariable.wait(lock, [this, locationPattern]() {
+            return !m_locationPattern2LogQueueMap[locationPattern].empty() || m_isStopThreadsRequested;
         });
 
         if (m_isStopThreadsRequested) {
@@ -70,21 +66,21 @@ void Logging::threadWork(const std::string& category)
         }
 
         CurrentDateTimeUTC dt;
-        std::string currentFileName = Logging::fileName(dt, category);
-        if (currentFileName != m_category2FileNameMap[category]) {
+        std::string currentFilePath = Logging::filePath(dt, locationPattern);
+        if (currentFilePath != m_locationPattern2FilePathMap[locationPattern]) {
             file.close();
-            file.open(currentFileName, std::ios::app);
-            m_category2FileNameMap[category] = currentFileName;
+            file.open(currentFilePath, std::ios::app);
+            m_locationPattern2FilePathMap[locationPattern] = currentFilePath;
         }
 
-        // process all log messages in the queue belonging to current category
-        std::queue<std::string>& queuePerCategory = m_category2LogQueueMap[category];
-        while (!queuePerCategory.empty()) {
-            std::string msg = queuePerCategory.front();
-            queuePerCategory.pop();
+        // process all log messages in the queue belonging to current locationPattern
+        std::queue<std::string>& queues = m_locationPattern2LogQueueMap[locationPattern];
+        while (!queues.empty()) {
+            std::string msg = queues.front();
+            queues.pop();
             // write the log message to the file
             file << dt.dateTimeStr() << "," << std::this_thread::get_id() << ":" << msg << std::endl;
-            MLOGGER_DEBUG("th", std::this_thread::get_id(), "write", msg, "category=", category);
+            MLOGGER_DEBUG("th", std::this_thread::get_id(), "write", msg, "locationPattern=", locationPattern);
         }
 
         file.flush(); // flush the output to ensure it's written immediately

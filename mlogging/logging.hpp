@@ -39,19 +39,19 @@ public:
     Logging();
     ~Logging();
 
-    void log(const std::string& msg, const std::string& path="orders");
+    void log(const std::string& msg, const std::string& locationPattern="orders");
 
 private:
     std::vector<std::thread> m_threads;
-    std::unordered_map<std::string, std::queue<std::string>> m_category2LogQueueMap;
-    std::unordered_map<std::string, std::string> m_category2FileNameMap;
+    std::unordered_map<std::string, std::queue<std::string>> m_locationPattern2LogQueueMap;
+    std::unordered_map<std::string, std::string> m_locationPattern2FilePathMap;
     std::mutex m_mutex;
     std::condition_variable m_conditionVariable;
     bool m_isStopThreadsRequested = false;
 
-    void threadWork(const std::string& category);
+    void threadWork(const std::string& locationPattern);
 
-    static std::string fileName(const CurrentDateTimeUTC& dt, const std::string& category);
+    static std::string filePath(const CurrentDateTimeUTC& dt, const std::string& locationPattern);
 };
 
 } // namespace custom
