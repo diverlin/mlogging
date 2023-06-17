@@ -27,7 +27,7 @@ Logging::~Logging()
     }
 }
 
-void Logging::log(const std::string& msg, const std::string& locationPattern)
+void Logging::handleLogMessage(const std::string& locationPattern, const std::string& msg)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
     MLOGGER_DEBUG("add log queue", msg, locationPattern);

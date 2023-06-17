@@ -6,6 +6,7 @@
 #include <vector>
 #include <unordered_map>
 #include <queue>
+#include <sstream>
 
 class CurrentDateTimeUTC;
 
@@ -40,7 +41,17 @@ public:
     ~Logging();
 
     void setRootPath(const std::string& rootPath) { m_rootPath = rootPath; }
-    void log(const std::string& msg, const std::string& locationPattern="orders");
+
+    void log(const std::string& locationPattern, const std::string& msg) {
+        handleLogMessage(locationPattern, msg);
+    }
+
+    template<typename... Args>
+    void log(const std::string& locationPattern, const Args&... args) {
+        std::ostringstream oss;
+        logHelper(oss, args...);
+        handleLogMessage(locationPattern, oss.str());
+    }
 
 private:
     std::string m_rootPath;
@@ -51,10 +62,18 @@ private:
     std::condition_variable m_conditionVariable;
     bool m_isStopThreadsRequested = false;
 
+    void handleLogMessage(const std::string& locationPattern, const std::string& msg);
     void threadWork(const std::string& locationPattern);
 
     static std::string filePath(const std::string& rootPath, const std::string& locationPattern, const CurrentDateTimeUTC& dt);
     static void reopenFilePath(std::ofstream&, std::string& filePath);
+
+    template<typename T, typename... Args>
+    void logHelper(std::ostringstream& oss, const T& first, const Args&... rest) {
+        oss << first << " ";
+        logHelper(oss, rest...);
+    }
+    void logHelper(std::ostringstream& oss) {}
 };
 
 } // namespace custom

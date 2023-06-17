@@ -3,18 +3,18 @@
 int main() {
     custom::Logging logging("/workspace/tmp");
 
-    logging.log("message1", "orders/cat1");
-    logging.log("message2", "orders_extra/cat2");
-    logging.log("message3", "orders_extra/cat3");
-    logging.log("message4", "orders/cat1");
-    logging.log("message5", "orders/cat1");
-    logging.log("message6", "orders/cat1");
-    logging.log("message7", "orders/cat1");
+    logging.log("orders/cat1", "message1", 1, 2.0f, "yes");
+    logging.log("orders_extra/cat2", "message2");
+    logging.log("orders_extra/cat3", "message3");
+    logging.log("orders/cat1", "message4", "proof");
+    logging.log("orders/cat1", "message5", 1, 1);
+    logging.log("orders/cat1", "message6");
+    logging.log("orders/cat1", "message7");
 
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
     logging.setRootPath("/workspace/tmp/new");
-    logging.log("message8", "orders/cat1");
+    logging.log("orders/cat1", "message8");
 
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
