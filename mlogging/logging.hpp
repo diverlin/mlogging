@@ -52,6 +52,7 @@ private:
     void threadWork(const std::string& locationPattern);
 
     static std::string filePath(const CurrentDateTimeUTC& dt, const std::string& locationPattern);
+    static void reopenFilePath(std::ofstream&, std::string& filePath);
 };
 
 } // namespace custom

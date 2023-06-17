@@ -13,13 +13,13 @@ int main() {
     custom::Logging logging;
 
     // Wake up thread with index 1
-    logging.log("msg1", "cat1");
-    logging.log("msg2", "cat2");
-    logging.log("msg3", "cat3");
-    logging.log("msg4", "cat1");
-    logging.log("msg5", "cat1");
-    logging.log("msg6", "cat1");
-    logging.log("msg7", "cat1");
+    logging.log("message1", "orders/cat1");
+    logging.log("message2", "orders_extra/cat2");
+    logging.log("message3", "orders_extra/cat3");
+    logging.log("message4", "orders/cat1");
+    logging.log("message5", "orders/cat1");
+    logging.log("message6", "orders/cat1");
+    logging.log("message7", "orders/cat1");
 
     // Continue other tasks
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
