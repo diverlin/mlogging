@@ -1,11 +1,16 @@
 #include <logging.hpp>
-#include <chrono>
+#include <currentdatetimeutc.hpp>
+
 #include <iostream>
 
 int main() {
-    custom::Logging logging;
+    CurrentDateTimeUTC dt;
 
-    // Put threads to sleep
+    std::cout << dt.dateStr() << std::endl;
+    std::cout << dt.timeStr() << std::endl;
+    std::cout << dt.dateTimeStr() << std::endl;
+
+    custom::Logging logging;
 
     // Wake up thread with index 1
     logging.log("msg1", "cat1");

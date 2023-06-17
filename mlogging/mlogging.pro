@@ -8,6 +8,10 @@ DEFINES += ENABLE_MLOGGER_DEBUG
 SOURCES += \
         main.cpp \
         logging.cpp \
+        currentdatetimeutc.cpp \
+        fsutils.cpp \
 
 HEADERS += \
-        logging.hpp
+        logging.hpp \
+        currentdatetimeutc.hpp \
+        fsutils.hpp \

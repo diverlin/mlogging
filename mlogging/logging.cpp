@@ -1,4 +1,5 @@
 #include "logging.hpp"
+#include "currentdatetimeutc.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -45,6 +46,8 @@ void Logging::threadWork(const std::string& category)
 
     std::unique_lock<std::mutex> lock(m_mutex);
     while (true) {
+        CurrentDateTimeUTC dt;
+
         m_conditionVariable.wait(lock, [this, category]() {
             return !m_category2LogQueueMap[category].empty() || m_isStopThreadsRequested;
         });
@@ -58,10 +61,9 @@ void Logging::threadWork(const std::string& category)
         while (!queuePerCategory.empty()) {
             std::string msg = queuePerCategory.front();
             queuePerCategory.pop();
-            MLOGGER_DEBUG("th", std::this_thread::get_id(), "write", msg, "category=", category);
-
             // write the log message to the file
-            file << msg << std::endl;
+            file << dt.dateTimeStr() << "," << std::this_thread::get_id() << ":" << msg << std::endl;
+            MLOGGER_DEBUG("th", std::this_thread::get_id(), "write", msg, "category=", category);
         }
 
         file.flush(); // flush the output to ensure it's written immediately
