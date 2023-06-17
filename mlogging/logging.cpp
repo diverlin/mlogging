@@ -1,5 +1,6 @@
 #include "logging.hpp"
 #include "currentdatetimeutc.hpp"
+#include "fsutils.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -8,6 +9,7 @@ namespace custom {
 
 Logging::Logging()
 {
+    //fsutils::run_tests();
 }
 
 Logging::~Logging()
@@ -24,8 +26,10 @@ Logging::~Logging()
     }
 }
 
-void Logging::log(const std::string& msg, const std::string& category)
+void Logging::log(const std::string& msg, const std::string& relPath)
 {
+    std::string category(relPath);
+
     std::lock_guard<std::mutex> lock(m_mutex);
     MLOGGER_DEBUG("add log queue", msg, category);
     const bool isThreadForCategoryExists = m_category2LogQueueMap.find(category) != m_category2LogQueueMap.end();
@@ -42,7 +46,9 @@ void Logging::log(const std::string& msg, const std::string& category)
 std::string Logging::fileName(const CurrentDateTimeUTC& dt, const std::string& category)
 {
     std::string result(dt.dateStr());
-    result += "_" + category;
+    std::string loc = fsutils::basePath(category);
+    std::string baseName = fsutils::baseName(category);
+    result += "_" + baseName;
     return result;
 }
 

@@ -4,7 +4,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <vector>
-#include <map>
+#include <unordered_map>
 #include <queue>
 
 class CurrentDateTimeUTC;
@@ -39,12 +39,12 @@ public:
     Logging();
     ~Logging();
 
-    void log(const std::string& msg, const std::string& category="default");
+    void log(const std::string& msg, const std::string& path="orders");
 
 private:
     std::vector<std::thread> m_threads;
-    std::map<std::string, std::queue<std::string>> m_category2LogQueueMap;
-    std::map<std::string, std::string> m_category2FileNameMap;
+    std::unordered_map<std::string, std::queue<std::string>> m_category2LogQueueMap;
+    std::unordered_map<std::string, std::string> m_category2FileNameMap;
     std::mutex m_mutex;
     std::condition_variable m_conditionVariable;
     bool m_isStopThreadsRequested = false;
