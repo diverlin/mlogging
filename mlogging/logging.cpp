@@ -7,7 +7,8 @@
 
 namespace custom {
 
-Logging::Logging()
+Logging::Logging(const std::string& rootPath)
+    : m_rootPath(rootPath)
 {
     //fsutils::run_tests();
 }
@@ -41,21 +42,16 @@ void Logging::log(const std::string& msg, const std::string& locationPattern)
     }
 }
 
-std::string Logging::filePath(const CurrentDateTimeUTC& dt, const std::string& locationPattern)
-{
-    std::string basePath = fsutils::basePath(locationPattern);
-    std::string baseName = fsutils::baseName(locationPattern);
-    return basePath + dt.dateStr() + "_" + baseName;
-}
-
 void Logging::threadWork(const std::string& locationPattern)
 {
     CurrentDateTimeUTC startDt;
-    std::string startFilePath = Logging::filePath(startDt, locationPattern);
     std::ofstream file;
-    reopenFilePath(file, startFilePath);
 
     std::unique_lock<std::mutex> lock(m_mutex);
+
+    std::string startFilePath = Logging::filePath(m_rootPath, locationPattern, startDt);
+    reopenFilePath(file, startFilePath);
+
     m_locationPattern2FilePathMap[locationPattern] = startFilePath;
     while (true) {
         m_conditionVariable.wait(lock, [this, locationPattern]() {
@@ -67,7 +63,7 @@ void Logging::threadWork(const std::string& locationPattern)
         }
 
         CurrentDateTimeUTC dt;
-        std::string currentFilePath = Logging::filePath(dt, locationPattern);
+        std::string currentFilePath = Logging::filePath(m_rootPath, locationPattern, dt);
         if (currentFilePath != m_locationPattern2FilePathMap[locationPattern]) { // the currentFilePath take into account current date(day num) which will trigger new file creation
             reopenFilePath(file, currentFilePath);
             m_locationPattern2FilePathMap[locationPattern] = currentFilePath;
@@ -80,7 +76,7 @@ void Logging::threadWork(const std::string& locationPattern)
             queues.pop();
             // write the log message to the file
             file << dt.dateTimeStr() << "," << std::this_thread::get_id() << ":" << msg << std::endl;
-            MLOGGER_DEBUG("th", std::this_thread::get_id(), "write", msg, "locationPattern=", locationPattern);
+            MLOGGER_DEBUG("th", std::this_thread::get_id(), "write", msg, "locationPattern=", locationPattern, "to", currentFilePath);
         }
 
         file.flush(); // flush the output to ensure it's written immediately
@@ -90,6 +86,17 @@ void Logging::threadWork(const std::string& locationPattern)
     file.close();
 }
 
+std::string Logging::filePath(const std::string& rootPath, const std::string& locationPattern, const CurrentDateTimeUTC& dt)
+{
+    std::string basePath = fsutils::basePath(locationPattern);
+    std::string baseName = fsutils::baseName(locationPattern);
+    std::string result = basePath + dt.dateStr() + "_" + baseName;
+    if (!rootPath.empty()) {
+        result = rootPath + "/" + result + ".log";
+    }
+    return result;
+}
+
 void Logging::reopenFilePath(std::ofstream& file, std::string& filePath)
 {
     if (file.is_open()) {
@@ -97,9 +104,10 @@ void Logging::reopenFilePath(std::ofstream& file, std::string& filePath)
     }
     std::string basePath = fsutils::basePath(filePath);
     if (!fsutils::isPathExist(basePath)) {
-        fsutils::makePath(basePath);
-    } else {
-        MLOGGER_DEBUG("fail to create path", basePath);
+        MLOGGER_DEBUG("create path", basePath);
+        if (!fsutils::makePath(basePath)) {
+            MLOGGER_DEBUG("fail to create path", basePath);
+        }
     }
     file.open(filePath, std::ios::app);
 }

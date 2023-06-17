@@ -36,12 +36,14 @@ namespace custom {
 
 class Logging {
 public:
-    Logging();
+    Logging(const std::string& rootPath="");
     ~Logging();
 
+    void setRootPath(const std::string& rootPath) { m_rootPath = rootPath; }
     void log(const std::string& msg, const std::string& locationPattern="orders");
 
 private:
+    std::string m_rootPath;
     std::vector<std::thread> m_threads;
     std::unordered_map<std::string, std::queue<std::string>> m_locationPattern2LogQueueMap;
     std::unordered_map<std::string, std::string> m_locationPattern2FilePathMap;
@@ -51,7 +53,7 @@ private:
 
     void threadWork(const std::string& locationPattern);
 
-    static std::string filePath(const CurrentDateTimeUTC& dt, const std::string& locationPattern);
+    static std::string filePath(const std::string& rootPath, const std::string& locationPattern, const CurrentDateTimeUTC& dt);
     static void reopenFilePath(std::ofstream&, std::string& filePath);
 };
 
