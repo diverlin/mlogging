@@ -11,33 +11,29 @@ Logging::Logging()
 
 Logging::~Logging()
 {
-    std::cout << "1 Logging::finish" << std::endl;
     {
+        // before joining thread we need unsleep them and finish they bodies.
         std::lock_guard<std::mutex> lock(m_mutex);
-        m_isStopThreadsRequested = true;
-        m_conditionVariable.notify_all();
+        m_isStopThreadsRequested = true; // condition to unsleep
+        m_conditionVariable.notify_all(); // wakeup all threads
     }
-    std::cout << "2 Logging::finish" << std::endl;
+
     for (std::thread& thread: m_threads) {
-        auto thread_id = thread.get_id();
-        std::cout << "join thread" << thread_id << std::endl;
         thread.join();
-        std::cout << "finish join thread" << thread_id << std::endl;
     }
 }
 
 void Logging::log(const std::string& msg, const std::string& category)
 {
     std::lock_guard<std::mutex> lock(m_mutex);
-    std::cout << "add log queue " << msg << " " << category << std::endl;
-    m_logQueue[category].push(msg);
-    bool isThreadExists = m_wakeUpFlags.find(category) != m_wakeUpFlags.end();
-    if (!isThreadExists) {
-        m_wakeUpFlags[category] = true;
+    MLOGGER_DEBUG("add log queue", msg, category);
+    const bool isThreadForCategoryExists = m_category2LogQueueMap.find(category) != m_category2LogQueueMap.end();
+    m_category2LogQueueMap[category].push(msg);
+    if (!isThreadForCategoryExists) {
         m_threads.emplace_back([this, category]() { doWork(category); });
-        std::cout << "create new thread" << m_threads.size() << std::endl;
+        MLOGGER_DEBUG("create new thread num=", m_threads.size());
     } else {
-        m_wakeUpFlags[category] = true;
+        // if thread exists, we wake up all sleeping threads, where the only thread which has messages queue will continue it's work
         m_conditionVariable.notify_all();
     }
 }
@@ -50,28 +46,25 @@ void Logging::doWork(const std::string& category)
     std::unique_lock<std::mutex> lock(m_mutex);
     while (true) {
         m_conditionVariable.wait(lock, [this, category]() {
-            return m_wakeUpFlags[category] || m_isStopThreadsRequested;
+            return !m_category2LogQueueMap[category].empty() || m_isStopThreadsRequested;
         });
 
         if (m_isStopThreadsRequested) {
             break;
         }
 
-        // Process the next log message in the queue
-        std::queue<std::string>& queuePerCategory = m_logQueue[category];
+        // process all log messages in the queue belonging to current category
+        std::queue<std::string>& queuePerCategory = m_category2LogQueueMap[category];
         while (!queuePerCategory.empty()) {
             std::string msg = queuePerCategory.front();
             queuePerCategory.pop();
-            std::cout << "th" << std::this_thread::get_id() << " write " << msg << " category=" << category << std::endl;
+            MLOGGER_DEBUG("th", std::this_thread::get_id(), "write", msg, "category=", category);
 
-            // Write the log message to the file
-            file << "File " << msg << std::endl;
+            // write the log message to the file
+            file << msg << std::endl;
         }
 
-        file.flush(); // Flush the output to ensure it's written immediately
-
-        // Reset the flag
-        m_wakeUpFlags[category] = false;
+        file.flush(); // flush the output to ensure it's written immediately
     }
     lock.unlock();
 
