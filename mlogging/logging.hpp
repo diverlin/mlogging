@@ -9,6 +9,7 @@
 
 
 #ifdef ENABLE_MLOGGER_DEBUG
+
 #define MLOGGER_DEBUG(...) PrintHelper(__VA_ARGS__)
 
 #include <iostream>
@@ -25,7 +26,9 @@ void PrintHelper(T arg, Args... args)
     PrintHelper(args...);
 }
 #else
+
 #define MLOGGER_DEBUG(...)
+
 #endif
 
 namespace custom {
