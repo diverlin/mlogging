@@ -2,7 +2,7 @@
 
 #include <chrono>
 
-#include <iostream>
+#include <sstream>
 #include <iomanip>
 
 CurrentDateTimeUTC::CurrentDateTimeUTC()
@@ -10,7 +10,9 @@ CurrentDateTimeUTC::CurrentDateTimeUTC()
     // get the current system time in UTC
     auto currentTime = std::chrono::system_clock::now();
     std::time_t currentTimet = std::chrono::system_clock::to_time_t(currentTime);
-    std::tm* currentTm = std::gmtime(&currentTimet);
+    
+    std::tm currentTm;
+    gmtime_s(&currentTm, &currentTimet);
 
     // get the milliseconds
     auto duration = currentTime.time_since_epoch();
@@ -18,12 +20,12 @@ CurrentDateTimeUTC::CurrentDateTimeUTC()
 
     // date
     std::ostringstream oss;
-    oss << std::put_time(currentTm, "%Y-%m-%d");
+    oss << std::put_time(&currentTm, "%Y-%m-%d");
     m_dateStr = oss.str();
 
     // time
     oss.str("");
-    oss << std::put_time(currentTm, "%H:%M:%S") << ".";
+    oss << std::put_time(&currentTm, "%H:%M:%S") << ".";
     oss << std::setfill('0') << std::setw(3) << milliseconds.count();
     m_timeStr = oss.str();
 

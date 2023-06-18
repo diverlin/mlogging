@@ -90,9 +90,9 @@ std::string Logging::filePath(const std::string& rootPath, const std::string& lo
 {
     std::string basePath = fsutils::basePath(locationPattern);
     std::string baseName = fsutils::baseName(locationPattern);
-    std::string result = basePath + dt.dateStr() + "_" + baseName;
+    std::string result = basePath + dt.dateStr() + "_" + baseName + ".log";
     if (!rootPath.empty()) {
-        result = rootPath + "/" + result + ".log";
+        result = rootPath + "/" + result;
     }
     return result;
 }

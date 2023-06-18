@@ -1,1 +1,6 @@
 *.user
+build/*
+.vs/*
+mlogging/.vs/*
+mlogging/x64/*
+*.log
