@@ -13,7 +13,7 @@ int main() {
 
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-#ifdef WIN32
+#ifdef _WIN32
     logging.setRootPath("C:/workspace/tmp/new");
 #else
     logging.setRootPath("/workspace/tmp/new");
