@@ -7,10 +7,10 @@
 
 namespace custom {
 
-Logging::Logging(const std::string& rootPath)
-    : m_rootPath(rootPath)
+Logging& Logging::instance()
 {
-    //fsutils::run_tests();
+    static Logging logging;
+    return logging;
 }
 
 Logging::~Logging()

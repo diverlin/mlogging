@@ -37,7 +37,7 @@ namespace custom {
 
 class Logging {
 public:
-    Logging(const std::string& rootPath="");
+    static Logging& instance();
     ~Logging();
 
     void setRootPath(const std::string& rootPath) { m_rootPath = rootPath; }
@@ -54,6 +54,8 @@ public:
     }
 
 private:
+    Logging()=default;
+
     std::string m_rootPath;
     std::vector<std::thread> m_threads;
     std::unordered_map<std::string, std::queue<std::string>> m_locationPattern2LogQueueMap;
